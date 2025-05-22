@@ -3,7 +3,7 @@ from ursina import *
 
 class FirstPersonController(Entity):
     def __init__(self, **kwargs):
-        self.cursor = Entity(parent=camera.ui, model='quad', color=color.pink, scale=.008, rotation_z=45)
+        self.cursor = Entity(parent=camera.ui, model='crosshair.jpg', color=color.pink, scale=.008, rotation_z=45)
         super().__init__()
         self.speed = 5
         self.height = 2
@@ -143,10 +143,11 @@ if __name__ == '__main__':
     player.gun = None
 
 
-    gun = Button(parent=scene, model='cube', color=color.blue, origin_y=-.5, position=(3,0,3), collider='box', scale=(.2,.2,1))
+    gun = Button(parent=scene, model='scifi_gun.obj', color=color.yellow, origin_y=-.5, position=(3,0,3), collider='box', scale=(0.2,0.2,0.2))
     def get_gun():
         gun.parent = camera
-        gun.position = Vec3(0.5,0,0.5)
+        gun.position = Vec3(0.2,-0.5,0.5)
+        gun.rotation = (180,0,0)
         player.gun = gun
     gun.on_click = get_gun
 
@@ -165,10 +166,10 @@ if __name__ == '__main__':
     def input(key):
         if key == 'left mouse down' and player.gun:
             gun.blink(color.orange)
-            bullet = Entity(parent=gun, model='cube', scale=.1, color=color.black)
+            bullet = Entity(parent=gun, model='cube', scale=(0.5, 0.5, 1), color=color.black)
             bullet.world_parent = scene
-            bullet.animate_position(bullet.position+(bullet.forward*50), curve=curve.linear, duration=1)
-            destroy(bullet, delay=1)
+            bullet.animate_position(bullet.position+(bullet.forward*5000), curve=curve.linear, duration=1)
+            destroy(bullet, delay=0.1)
 
     # player.add_script(NoclipMode())
     app.run()
