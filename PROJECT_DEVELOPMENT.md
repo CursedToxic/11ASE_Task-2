@@ -159,6 +159,7 @@ Walls, Enemies and enemy mechanics need to be added. Bullet positioning needs to
 ```pseudocode
 BEGIN
     class Player
+        controller = FirstPersonController
         IF key = scroll up THEN
             DISPLAY previous weapon
         ENDIF
@@ -186,6 +187,15 @@ BEGIN
         follow player
 END
 ```
+
+### Flowchart
+Note: The flow chart is based off of the functions within the player class (this mainly just outlines the FirstPersonController within Ursina).
+![alt text](images/playermain.png)
+![alt text](images/shootchart.png)
+![alt text](images/movearoundchart.png)
+![alt text](images/updatefuncchart.png)
+
+
 ## Build and Test
 ```python
 from ursina import *
@@ -314,7 +324,8 @@ Now that the bullet positioning has been fixed, and walls and enemies have been 
 
 # Sprint 3
 ## Design
-### Class Diagram
+### UML Class Diagram
+![alt text](images/UML.png)
 ## Build and Test
 ```python
 from ursina import *
@@ -636,6 +647,19 @@ title_screen()
 app.run()
 ```
 ## Review
+**Evaluate how effectively your project meets the functional and non-functional requirements defined in your planning.**\
+This project meets all of the fundemental requirements definied in my planning. However, the map itself could be improved on by adding walls so that the player cannot fall off regardless of how hard they try. Unfortunately enemies were not added and will be added in future sprints as they require knowledge of classes. Overall, my current project met some of the functional and non-functional requirements, requiring the implementation of the remaining requirements in future sprints.
+
+**Analyse the performance of your program against the key use-cases you identified.**\
+The program performs well so far, although it does not have much headroom for that many more entities in terms of frame rate. I tested fullscreen mode and this works slightly better, with more noticeable increments when increasing the resolution above 1080p (I have a 4k monitor). Without fullscreen, it has extreme fluctuations in framerate on my monitor i.e. does not run smoothly. It does not yet meet the "defeat enemies" use case as this is to be worked on in future sprints (likely sprints 2 and 3). Apart from these use-cases that have not yet been met, everything else has been checked off.
+
+**Assess the quality of your code in terms of readability, structure, and maintainability.**\
+Now that I have added my own classes and functions, my code is still readable but is slightly more difficult ot understand due to the lack of comments. This means that in the future I would really need to understand the code in order to make improvements. 
+
+**Explain the improvements that should be made in the next stage of development.**\
+Walls, Enemies and enemy mechanics need to be added. Bullet positioning needs to be fixed, as it does not fire directly to the crosshair. Once these have been fixed, I need to look into adding a wave system which will go hand in hand with the enemy spawning mechanics. These should be added in future sprints (sprint 2 and 3). A bare minimum for sprint 2 is to have enemies and walls that are displayed.
+
+
 # Sprint 4
 ## Design
 ## Build and Test
