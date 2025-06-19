@@ -1,10 +1,5 @@
-<<<<<<< Updated upstream
 ursina == 7.0.0
 pillow
 random
 os
 
-=======
-ursina
-pillow
->>>>>>> Stashed changes
