@@ -5,15 +5,11 @@ A really basic FPS game made with ursina engine in python. The goal is to defeat
 
 ## Installation
 Clone the repository and navigate to the project directory:
-11ASE_Task-2/main/main.py
+11ASE_Task-2/main/sahur_shooter.py
 
 Then run the file after installing the dependencies in 'requirements.txt'.
 
-**OR**
-
-Install the dependencies in 'requirements.txt'\
-AND\
-Download the repo and run the .exe file (sorry MacOS and Linus users).
+Note: I tried to get a .exe file, it didn't work for me.
 
 ## Features
 - Title screen with Play and Quit buttons.
