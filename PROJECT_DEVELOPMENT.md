@@ -1180,7 +1180,7 @@ def toggle_pause():
 title_screen()  # Show title screen
 app.run() 
 ```
-Note: The textures don't work until I move the python file to 11ASE_Task-2 (so there is no folders). This applies to all Sprints. Please test using 'testing.py'.
+Note: The textures don't work until I move the python file to 11ASE_Task-2 (so there is no folders). This applies to all Sprints. Please test using 'sahur_shooter.py'.
 ## Launch
 The game will be available in a .exe file. To run this on a non-Windows operating system, you can download Wine in order to run .exe files.
 
