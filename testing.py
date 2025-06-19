@@ -2,7 +2,6 @@
 from ursina import *  # Ursina core
 from ursina.prefabs.first_person_controller import FirstPersonController  # First person controller prefab
 from ursina.prefabs.health_bar import HealthBar  # Health bar prefab
-from ursina.rigidbody import RigidBody
 import random  # For random number generation
 import time  # For time-based operations
 import os  # For file existence checking
@@ -20,9 +19,10 @@ wave_cleared = False  # Flag to check if the current wave is cleared
 # Player class definition
 class Player(Entity):  # Inherit from Ursina's Entity
     def __init__(self, **kwargs):  # Player constructor
-        self.controller = FirstPersonController(**kwargs)
-        super().__init__(parent=self.controller, collider='box', collider_type='dynamic')  # Use rigid body
-        self.health = 100
+        self.controller = FirstPersonController(**kwargs)  # Add first person controller
+        super().__init__(parent=self.controller)  # Initialize Entity with controller as parent
+        self.collider = CapsuleCollider(self, center=Vec3(0.5,2.5,0.5), height=5, radius=0.25)  # Add capsule collider
+        self.health = 100  # Set player health
         self.health_bar = HealthBar(bar_color=color.lime.tint(-.25), roundness=0.5, max_value=100, value=self.health, scale=(.25,.02), position=(-0.85,-0.45))  # Health bar UI
 
         self.gun = Entity(parent=self.controller.camera_pivot,  # Gun entity
@@ -51,7 +51,7 @@ class Player(Entity):  # Inherit from Ursina's Entity
 
     def input(self, key):  # Handle input events
         global paused  # Use global paused flag
-        if key == 'p':  # Pause key
+        if key == 'escape':  # Pause key
             if not ('win_screen_shown' in globals() and win_screen_shown):  # If win screen not shown
                 toggle_pause()  # Toggle pause
             return
@@ -74,7 +74,7 @@ class Player(Entity):  # Inherit from Ursina's Entity
         if key == 'left mouse down' and self.current_weapon == 0:  # Shoot gun
             Bullet(model='sphere',
                    color=color.black,
-                   scale=0.15,
+                   scale=0.1,
                    position=self.controller.camera_pivot.world_position,
                    rotation=self.controller.camera_pivot.world_rotation)
         
@@ -86,17 +86,12 @@ class Player(Entity):  # Inherit from Ursina's Entity
         if key == 'left mouse down' and self.current_weapon == 1:  # Knife attack
             self.slash()
 
-        if key == 'escape':  # Toggle mouse lock
-            mouse.locked = not mouse.locked
-
-    def update(self):  # Update player each frame
-        # Always follow the player, even if paused
-        # Sprinting with Shift
+    def update(self):  # Player Update
         if held_keys['shift']:
-            self.controller.speed = 10  # Sprint speed
+            self.controller.speed = 25 
         else:
-            self.controller.speed = 5   # Normal speed
-        self.controller.camera_pivot.y = 2 - held_keys['left control']  # Crouch if control held
+            self.controller.speed = 5
+        self.controller.camera_pivot.y = 2 - held_keys['left control']  # Crouch if control key held
 
     def slash(self):  # Knife attack logic
         if not hasattr(self, 'knife_cooldown'):
@@ -106,19 +101,16 @@ class Player(Entity):  # Inherit from Ursina's Entity
 
         self.knife_cooldown = time.time()  # Reset cooldown
 
-        # Basic forward slash animation (optional visual)
+        # Animate slash
         knife = self.knife  # Get knife entity
-        knife.animate_rotation(Vec3(60, -10, 90) + Vec3(-90, 0, 0), duration=0.1)  # Animate slash
+        knife.animate_rotation(Vec3(60, -10, 90) + Vec3(-90, 0, 0), duration=0.1) 
         knife.animate_rotation(Vec3(60, -10, 90), duration=0.1, delay=0.1)  # Reset rotation
 
         # Melee hit detection
         hit = raycast(self.controller.camera_pivot.world_position, self.controller.forward, distance=2)  # Raycast for hit
         if hit.hit:  # If hit something
-            print(f"Knife hit: {hit.entity}")  # Print hit entity
-
             if hasattr(hit.entity, 'health'):  # If entity has health
-                hit.entity.health -= 75  # Big damage for melee
-                print(f"Enemy health: {hit.entity.health}")  # Print enemy health
+                hit.entity.health -= 150  # One shot normal enemies
                 # Update boss health bar immediately if boss
                 if hasattr(hit.entity, 'is_boss') and hit.entity.is_boss:
                     global boss_health_bar
@@ -127,12 +119,10 @@ class Player(Entity):  # Inherit from Ursina's Entity
 
                 if hit.entity.health <= 0:  # If enemy dead
                     destroy(hit.entity)  # Destroy enemy
-
+                    
 # Bullet class definition
 class Bullet(Entity):  # Inherit from Entity
-    def __init__(self, speed=250, lifetime=10, direction=None, **kwargs):  # Bullet constructor
-        if direction is None:
-            direction = camera.forward.normalized()  # Default direction is camera forward
+    def __init__(self, speed=500, lifetime=0.5, direction=camera.forward.normalized(), **kwargs):  # Bullet constructor
         super().__init__(**kwargs)  # Initialize Entity
         self.speed = speed  # Bullet speed
         self.lifetime = lifetime  # Bullet lifetime
@@ -148,10 +138,13 @@ class Bullet(Entity):  # Inherit from Entity
         ray = raycast(self.world_position, self.forward, distance=self.speed*time.dt)  # Raycast ahead
         if not ray.hit and time.time() - self.start < self.lifetime:  # If not hit and not expired
             self.world_position += self.forward * self.speed * time.dt  # Move bullet
+        
+        if time.time() - self.start >= self.lifetime:  # If bullet expired
+            destroy(self)  # Destroy bullet
 
         if ray.hit:  # If hit something
             if hasattr(ray.entity, 'is_enemy') and ray.entity.is_enemy:  # If hit enemy
-                ray.entity.health -= 50  # Damage enemy
+                ray.entity.health -= 100  # Damage enemy
                 print(f"Enemy hit! Health: {ray.entity.health}")  # Print health
                 # Update boss health bar immediately if boss
                 if hasattr(ray.entity, 'is_boss') and ray.entity.is_boss:
@@ -164,12 +157,9 @@ class Bullet(Entity):  # Inherit from Entity
 
 # Enemy class definition
 class Enemy(Entity):  # Inherit from Entity
-    def __init__(self, position, player, health=150, damage=10):  # Enemy constructor
-        super().__init__(model='cube', color=color.clear, scale=1, position=position, collider='box')  # Physics body
-        RigidBody(self, BoxShape, mass=1)
-        # Visual child
-        self.visual = Entity(parent=self, model='assets/sahur.obj', texture='assets/sahur_skin.png', scale=1, position=(0,0,0))
-        self.speed = 2  # Enemy speed
+    def __init__(self, position, player, health=150, damage=5):  # Enemy constructor
+        super().__init__(model='assets/sahur.obj', texture='assets/sahur_skin.png', scale=1, position=position, collider='box')  # Enemy appearance
+        self.speed = 5  # Enemy speed
         self.is_enemy = True  # Tag as enemy
         self.health = health  # Enemy health
         self.player = player  # Reference to player
@@ -179,7 +169,23 @@ class Enemy(Entity):  # Inherit from Entity
         self.time_since_last_hit = 0.0  # Time since last hit
         self.collider = BoxCollider(self, center=Vec3(0.25,1.25,0.25), size=Vec3(1,5,1))  # Enemy collider
 
-        # Enemy is assumed to be spawned at a valid position
+        # --- Ensure enemy does not spawn inside a wall ---
+        max_attempts = 20
+        attempts = 0
+        while True:
+            collides = False
+            for entity in scene.entities:
+                if hasattr(entity, 'is_map') and entity.is_map and entity != ground:
+                    if self.intersects(entity).hit:
+                        collides = True
+                        break
+            if not collides:
+                break
+            # Try a new random position
+            self.position = Vec3(random.uniform(-40, 40), 1, random.uniform(-40, 40))
+            attempts += 1
+            if attempts >= max_attempts:
+                break  # Give up after too many attempts
     
     def prevent_merging(self):  # Prevent enemies from merging
         for other in enemy_list:  # Loop through all enemies
@@ -246,13 +252,12 @@ class Enemy(Entity):  # Inherit from Entity
                 if self.player.health <= 0:  # If player dead
                     self.player.health = 0
                     print("player died")
-                    death_screen = Text(text='YOU DIED', color=color.red, position=(0,0), scale=9, origin=(0,0), background=True, z=3)  # Show death screen
+                    death_screen = Text(text='YOU DIED', color=color.red, position=(0,0), scale=9, origin=(0,0), background=True, z=0)  # Show death screen
                     death_bg = Entity(parent=camera.ui, model='quad', scale=(2,1), color=color.black, z=1)  # Show background
-                    # Hide UI elements on death
+                    # Hide use pause screen but don't display pause text
                     player.health_bar.disable()
                     wave_text.disable()
                     enemies_left_text.disable()
-                    # Pause the game, but do not show pause overlay
                     paused = True
                     set_enemy_follow_enabled(False)
                     player.controller.enabled = False
@@ -265,12 +270,10 @@ class Boss(Enemy):  # Boss inherits from Enemy
         super().__init__(position=position, player=player, health=1000, damage=30)  # Call Enemy constructor
         self.model = 'assets/sahur.obj'  # Boss model
         self.texture = 'assets/sahur_skin.png' # Boss color
-        self.scale_x = 3  # Boss width
-        self.scale_y = 10  # Boss height
-        self.scale_z = 3  # Boss depth
+        self.scale = 5 # Make the boss bigger than the enemies
         self.is_boss = True  # Tag as boss
         global boss_health_bar
-        boss_health_bar = HealthBar(bar_color=color.red, roundness=0.5, max_value=1000, value=1000, scale=(1,0.01), position=(-0.50,0.40))  # Boss health bar
+        boss_health_bar = HealthBar(bar_color=color.red, roundness=0.5, max_value=10000, value=1000, scale=(1,0.01), position=(-0.50,0.40))  # Boss health bar
 
     def update(self):  # Update boss each frame
         if 'paused' in globals() and paused:  # If paused, do nothing
@@ -295,7 +298,7 @@ class Boss(Enemy):  # Boss inherits from Enemy
 class Map(Entity):  # Inherit from Entity
     def __init__(self, **kwargs):  # Map constructor
         if 'texture' not in kwargs:
-            kwargs['texture'] = 'grass'  # Default texture for all Map entities
+            kwargs['texture'] = 'assets/tung_wall.png'  # Default texture for all Map entities
         if 'model' not in kwargs:
             kwargs['model'] = 'cube'  # Default model for all Map entities
         if 'collider' not in kwargs:
@@ -309,7 +312,7 @@ player = Player()  # Create player
 # Hide health bar and wave text at start
 player.health_bar.disable()  # Hide health bar
 
-ground = Map(model='plane', scale=(100,1,100), color=color.yellow.tint(-.2), texture_scale=(500,500))  # Ground entity
+ground = Map(model='plane', scale=(100,1,100), color=color.yellow.tint(-.2), texture='assets/sahur_ground.png', texture_scale=(1,1))  # Ground entity
 border_one = Map(scale=(100, 5, 0.1), position=(50, 2.5, 0), rotation=(0,90,0))  # Border 1
 border_two = Map(scale=(100, 5, 1), position=(0, 2.5, 50), rotation=(0,0,0))  # Border 2
 border_three = Map(scale=(1, 5, 100), position=(0, 2.5, -50), rotation=(0,90,0))  # Border 3
@@ -323,7 +326,7 @@ min_length = 14  # Minimum wall length (innermost, slightly larger)
 max_length = 34  # Maximum wall length (outermost, slightly larger)
 wall_thickness = 1
 for i in range(num_layers):
-    # Proportional wall length based on distance from center
+    # Proportional wall length based on distance from center, so the wall edges align evenly
     t = (num_layers - 1 - i) / (num_layers - 1) if num_layers > 1 else 1
     wall_length = min_length + (max_length - min_length) * t
     offset = layer_gap * (i + 1) + wall_thickness * i
@@ -357,21 +360,6 @@ wave_text.disable()  # Hide wave text
 enemies_left_text = Text(text=f'Enemies Left: 0', position=(0.5, 0.45), scale=1, origin=(0,0), background=True)
 enemies_left_text.disable()
 
-def find_valid_enemy_spawn_position(max_attempts=10):
-    for _ in range(max_attempts):
-        pos = Vec3(random.uniform(-40, 40), 1, random.uniform(-40, 40))
-        temp_entity = Entity(position=pos, model='cube', collider='box', scale=(1,5,1), visible=False)
-        collides = False
-        for entity in scene.entities:
-            if hasattr(entity, 'is_map') and entity.is_map and entity != ground:
-                if temp_entity.intersects(entity).hit:
-                    collides = True
-                    break
-        destroy(temp_entity)
-        if not collides:
-            return pos
-    return None
-
 def spawn_wave():  # Spawn a new wave of enemies
     global enemy_list, round_number, wave_cleared, boss_health_bar
 
@@ -385,12 +373,10 @@ def spawn_wave():  # Spawn a new wave of enemies
         boss = Boss(position=pos, player=player)  # Create boss
         enemy_list.append(boss)  # Add boss to enemy list
     else:
-        for _ in range(2 * (2 ** round_number)):
-            pos = find_valid_enemy_spawn_position()
-            if pos is not None:
-                enemy = Enemy(position=pos, player=player)
-                enemy_list.append(enemy)
-            # If no valid position found, skip spawning this enemy
+        for _ in range(4 * round_number):  # Set the munber of enemies per wave to four times the wave number
+            pos = Vec3(random.uniform(-40, 40), 1, random.uniform(-40, 40))  # Random enemy spawn position
+            enemy = Enemy(position=pos, player=player)  # Create enemy
+            enemy_list.append(enemy)  # Add enemy to list
 
     # Ensure new enemies are frozen if paused
     if 'paused' in globals() and paused:
@@ -434,12 +420,10 @@ def update():  # Main update loop
             destroy(enemy)  # Destroy enemy
             enemy_list.remove(enemy)  # Remove from list
 
-    # WIN CONDITION: If boss wave and all enemies are gone, show win screen
     if round_number == 10 and len(enemy_list) == 0 and player.health > 0:
-        win_screen_shown = True  # Set win flag
+        win_screen_shown = True  # Show win screen if this is 'True'
         win_text = Text(text='YOU WIN!', color=color.lime, position=(0,0), scale=9, origin=(0,0), background=True, z=0, parent=camera.ui)  # Win text
-        win_bg = Entity(parent=camera.ui, model='quad', scale=(2,1), color=color.black, z=1)  # Win background
-        # congrats = Text(text='Congratulations! You defeated the boss!', color=color.white, position=(0,-0.15), scale=1, origin=(0,0), background=True, z=1, parent=camera.ui)
+        win_bg = Entity(parent=camera.ui, model='quad', scale=(2,1), color=color.black, z=1)  # Win background=
         mouse.locked = False  # Unlock mouse
         paused = True  # Pause game
         player.controller.enabled = False  # Disable player
@@ -489,20 +473,18 @@ def title_screen():  # Show title screen
     def start_game():  # Start game handler
         global game_started, wake_text_disabled
 
-        title_bg.disable()
-        title_text.disable()
-        play_button.disable()
-        quit_button.disable()
-        global round_number
-        game_started = True
-        round_number = 1
-        mouse.locked = True
-        camera.position = (0,0,0)
-        player.health_bar.enable()
-        wave_text.enable()
-        wake_text_disabled = False
-        spawn_wave()
-        update()
+        title_bg.disable()  # Hide title background
+        title_text.disable()  # Hide title text
+        play_button.disable()  # Hide play button
+        quit_button.disable()  # Hide quit button
+        game_started = True  # Set game started
+        mouse.locked = True  # Lock mouse
+        camera.position = (0,0,0)  # Reset camera position
+        # Show health bar and wave text
+        player.health_bar.enable()  # Show health bar
+        wave_text.enable()  # Show wave text
+        wake_text_disabled = False  # Update flag
+        update()  # Start update loop
 
     def quit_game():  # Quit game handler
         app.userExit()  # Exit app
