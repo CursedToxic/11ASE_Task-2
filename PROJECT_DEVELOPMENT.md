@@ -648,20 +648,21 @@ app.run()
 ```
 ## Review
 **Evaluate how effectively your project meets the functional and non-functional requirements defined in your planning.**\
-This project meets all of the fundemental requirements definied in my planning. However, the map itself could be improved on by adding walls so that the player cannot fall off regardless of how hard they try. Unfortunately enemies were not added and will be added in future sprints as they require knowledge of classes. Overall, my current project met some of the functional and non-functional requirements, requiring the implementation of the remaining requirements in future sprints.
+This project now meets all but one of the functional and non-functional requirements that I have defined in my planning. One thing to note is that the death screen is repeatedly spawned, leading to low framerates and worsening the performance to the point that it is extremely difficult to close out or the game as intended. This means that I can extend myself in sprint 4 and enhance the user experience without a sacrifice in performance. I will add a boss wave and screens for when the player beats it. I will also make sure that they do not infinitely spawn, thus increasing the performance of aforementioned aspects.
 
 **Analyse the performance of your program against the key use-cases you identified.**\
-The program performs well so far, although it does not have much headroom for that many more entities in terms of frame rate. I tested fullscreen mode and this works slightly better, with more noticeable increments when increasing the resolution above 1080p (I have a 4k monitor). Without fullscreen, it has extreme fluctuations in framerate on my monitor i.e. does not run smoothly. It does not yet meet the "defeat enemies" use case as this is to be worked on in future sprints (likely sprints 2 and 3). Apart from these use-cases that have not yet been met, everything else has been checked off.
+The program performs slightly worse than on sprint 2, however, this is just because there are more entities in the game, making it more developed. Every aspect of the game works as intended, so in that light the game does fully meet all the use-case requirements previously identified. All performance issue will be fixed in sprint 4, so that the user enjoys a smooth experience while clearing waves.
 
 **Assess the quality of your code in terms of readability, structure, and maintainability.**\
-Now that I have added my own classes and functions, my code is still readable but is slightly more difficult ot understand due to the lack of comments. This means that in the future I would really need to understand the code in order to make improvements. 
+Now that I have added my own classes and functions, my code is still readable but is slightly more difficult ot understand due to the lack of comments. This means that in the future I would really need to understand the code in order to make improvements. In the next sprint I will make the code understandable to more people, this way they can also modify the game and even improve on it. 
 
 **Explain the improvements that should be made in the next stage of development.**\
-Walls, Enemies and enemy mechanics need to be added. Bullet positioning needs to be fixed, as it does not fire directly to the crosshair. Once these have been fixed, I need to look into adding a wave system which will go hand in hand with the enemy spawning mechanics. These should be added in future sprints (sprint 2 and 3). A bare minimum for sprint 2 is to have enemies and walls that are displayed.
-
+Enemy textures and models, More walls should be added to the map so that is more challenging to navigate. The game should also have more enemies; two on the first wave is too easy. Also, the game should have a boss wave and screens for when the player beats it, as mentioned before. Another thing to make sure is that the enemies cannot spawn in the walls and they cannot clip through them either. I will be implementing these in the final sprint.
 
 # Sprint 4
 ## Design
+### Updated UML Class Diagram
+![alt_text](images/UpdatedUML.png)
 ## Build and Test
 ## Review
 ## Evaluation of System
